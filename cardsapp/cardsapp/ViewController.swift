@@ -5,49 +5,45 @@ class ViewController: UIViewController  {
     
     @IBOutlet weak var collectionView: UICollectionView!
         
-    @IBOutlet weak var CollectionViewCell_Cards: UICollectionViewCell!
+    @IBOutlet weak var searchBar: UISearchBar!
     
-    public let deckItem = "deckItem"
-    public var cards: [Cards] = []
-    
+    public let deckCellIdentifier = "CardCollectionViewCellTwo"
+    var cards: [Media] = []
+    var filteredCards: [Media] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.collectionViewLayout = UICollectionViewFlowLayout()
         
-        let uiNib = UINib(nibName: "CardsCell", bundle: nil)
-        collectionView.register(uiNib, forCellWithReuseIdentifier: deckItem)
+        searchBar.delegate = self
+        searchBar.showsCancelButton = true
+        
+        let uiNib = UINib(nibName: "CardCollectionViewCellTwo", bundle: nil)
+        collectionView.register(uiNib, forCellWithReuseIdentifier: deckCellIdentifier)
+        
     }
-    @IBAction func shuffleBottom(_ sender: Any) {
-        loadDeckId()
-    }
-}
-func loadDeckId(){
     
-    guard URL(string: "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1") != nil else {
-        print("Invalid URL")
-        return}
+    @IBAction func shuffleBottom(_ sender: Any) {
+        loadDeck()
+    }
 
+
+
+func loadDeck(){
     
     let urlStr = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
 
     // guard cause url is optional, it could probably not work
-    guard let url = URL(string: urlStr) else { return }
+    guard let url = URL(string: urlStr) else { return print("Invalid URL") }
     
-    var request = URLRequest(url: url)
-    request.httpMethod = "GET"
-
-    NetworkManager.shared.get([Deck].self, from: url)
-    {
-        result in
+    NetworkManager.shared.get(Deck.self, from: url){ result in
         
         switch result {
-            
         case .success(let deck):
-            getCardsId(fromID: deckId)
+            self.getCardsfromDeckId(fromDeckId: deck.deckId)
             
         case .failure(let error):
             print(error)
@@ -58,20 +54,20 @@ func loadDeckId(){
          }))
         }
     }
+}
     
-    
-    func getCardsId(fromID deckId: String){
+   public func getCardsfromDeckId(fromDeckId deckId: String){
+        
         let finalDeckStr="https://deckofcardsapi.com/api/deck/\(deckId)/draw/?count=52"
         guard let finalDeckurl=URL(string : finalDeckStr) else{ return }
                
                 
-        NetworkManager.shared.get( GetCards.self, from: finalDeckurl )
-        { result in
+        NetworkManager.shared.get( Cards.self, from: finalDeckurl ) { result in
             
             switch result {
                 
-            case .success(let deck):
-                self.cards = deck.cards
+            case .success(let cards):
+                self.cards = cards.cards
                 self.collectionView.reloadData()
 
             case .failure(let error):
@@ -87,55 +83,88 @@ func loadDeckId(){
             }
         }
      }
-    }
-
+}
 
 
 extension ViewController: UICollectionViewDataSource, UICollectionViewDelegate
 {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        cards.count
+        guard filteredCards.isEmpty else {
+            return filteredCards.count
+        }
+        return cards.count
     }
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardsCollectionViewCell", for: indexPath) as? CardsCollectionViewCell
-            
-        let card = cards[indexPath.row]
-        if let imageURL = URL(string: Card.image){
-            UIImageView.load(url: imageURL)
-        }
+                
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardCollectionViewCellTwo", for: indexPath) as? CardCollectionViewCellTwo else {return UICollectionViewCell()}
         
-        return cell!
+        let card: Media
+                
+        if filteredCards.isEmpty { card = cards[indexPath.row] }
+        else { card = filteredCards[indexPath.row] }
+        
+        cell.cardImageView.image = readUrl(urlStr: card.image)
+        
+        return cell
+        
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+            let DetailCard = DetailCardViewController()
+           
+            if filteredCards.isEmpty {
+                DetailCard.cards = cards[indexPath.row]
+            } else {
+                DetailCard.cards = filteredCards[indexPath.row]
             }
+            
+            showDetailViewController(DetailCard, sender: nil)
+        }
 }
 
-    
+
 extension ViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 150, height: 280)
+        let width = collectionView.frame.width / 4
+        let height = collectionView.frame.width / 3
+        return CGSize(width: width, height: height)
+        
     }
 }
 
 extension UIImageView {
-    public func load(from url: URL, contentMode mode: UIView.ContentMode = .scaleAspectFit) {
-        contentMode = mode
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            guard
-                let httpURLResponse = response as? HTTPURLResponse, httpURLResponse.statusCode == 200,
-                let mimeType = response?.mimeType, mimeType.hasPrefix("image"),
-                let data = data, error == nil,
-                let image = UIImage(data: data)
-                else { return }
-            DispatchQueue.main.async() {
-                self.image = image
+
+    func load(url: URL) {
+
+        DispatchQueue.global().async { [weak self] in
+
+            if let data = try? Data(contentsOf: url) {
+
+                if let image = UIImage(data: data) {
+
+                    DispatchQueue.main.async {
+
+                        self?.image = image
+
+                    }
+
+                }
+
             }
-        }.resume()
+
+        }
+
     }
-    func load(from link: String, contentMode mode: UIView.ContentMode = .scaleAspectFit) {
-        guard let url = URL(string: link) else { return }
-        load(from: url, contentMode: mode)
-    }
+
 }
+    
+
+func readUrl(urlStr: String) -> UIImage? {
+        let url = URL(string: urlStr)
+        let data = try? Data(contentsOf: url!)
+        let image = UIImage(data: data!)
+        
+        return image
+    }
 
 
-    
-    

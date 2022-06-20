@@ -1,0 +1,222 @@
+//
+//  ViewController.swift
+//  cardsapp
+//
+//  Created by admin on 6/9/22.
+//
+
+import UIKit
+
+
+// links
+/*https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1*/
+/* https://deckofcardsapi.com/api/deck/gfayc3of8rex/draw?count=52 */
+
+class ViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
+        
+    
+    @IBOutlet weak var collectionView: UICollectionView!
+        
+    @IBOutlet weak var CollectionViewCell_Cards: UICollectionViewCell!
+    
+    var deck: [Deck] = []
+    var cards: [Cards] = []
+    var image: UIImage?
+    
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view.
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.collectionViewLayout = UICollectionViewFlowLayout()
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    //
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    //
+    }
+   
+    
+    @IBAction func shuffleBottom(_ sender: Any)
+    {
+        let aRandomInt = Int.random(in: 1...52)
+        print(aRandomInt)
+        
+        
+        func loadCardId()
+        {
+                guard URL(string: "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1") != nil else {
+                            print("Invalid URL")
+                    return}
+        }
+            
+            let urlStr = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
+        
+            // guard cause url is optional, it could probably not work
+            guard let url = URL(string: urlStr) else { return }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+
+            // task que ejecuta el requets/session for inizialiting the request
+            // todos los singleton se llaman shared
+            
+            let task = URLSession.shared.dataTask(with: request)
+        { data, response, error in
+            guard (data == nil), let data = data else {return}
+                
+                            // check for fundamental networking error
+                             print("error")
+                            
+
+                    
+    
+        //accesing to the DECK-ID
+        
+       if let url1 = URL(string: "https://countryflagsapi.com/png/\(deck_id)au69jqljooi/draw?count=52"){
+             cardsImageView.load(url: url1)
+    
+         }
+        guard let url = URL(string: urlStr) else { return }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+
+        
+
+}
+
+        func getDeckId(){
+            let urlstring="https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
+            guard let url=URL(string:urlstring)else{return}
+            var request=URLRequest(url:url)
+            request.httpMethod = "GET"
+            
+            
+            let task = URLSession.shared.dataTask(with:request){(data,response,error)in
+                guard error=nil,
+                    let data=data else{return}
+                
+                do{
+                    if let deckIdJson=try JSONSerialization.jsonObject(with:data,options:[])as?[String:Any]{
+                        guard let id=deckIdJson["deck_id"]as?String else{return}
+                        self.deckId=id
+                    }
+                    
+                    DispatchQueue.main.sync{
+                        print("Deck Id\(self.deckId)")
+                        self.getCards(deckId: self.deckId)
+                        print("Cards\(self cards)")
+                        //self.collectionView.reloadData()
+                    }
+                    }catch{
+                    print("Error",error)
+                    }
+            }
+        }
+        
+        func getCards(deckId:String){
+            let urlstring="https://deckofcardsapi.com/api/deck/\(deckId)/draw/?count=52"I
+            guard let url=URL(string:urlString)else{return)
+            var request=URLRequest(url:url)
+            request.httpMethod="GET"
+            
+                
+                let task=URLSession.shared.dataTask(with:request){(data,response,error)in
+                    guard error == nil,
+                        let data=data else{return}
+                    SVProgressHUD.dismiss()
+                    do{
+                        if let request CardJson=try JSONSerialization.jsonObject(with:data,options:[])as?[String:Any]{
+                            self.cards.removeAll()
+                            guard let CardsJson=request Cardson["cards"]as?[[String:Any]]else{return}
+                            print("Card Data -->\(cards Json)")
+                            for cardDic in cardsJson{
+                                
+                                guard let code=cardDic["code"]as?String,
+                                      let image=cardDic["image"]as?String,
+                                      let images=cardDic["images"]as?[String:String],
+                                      let value=cardDic["value"]as?String,
+                                      let suit=cardDic["suit"]as?String else{continue}
+                                      let card=Card(code:code,image:image,images:images,value:value,suit:suit)
+                                self.collectionView.reloadData()
+                            }
+                        } catch {
+                            print("error",error)
+                        }
+                    }
+                    task.resume()
+                }
+            }
+                                
+extension ViewController: UICollectionViewDataSource{
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return cards.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardsCollectionViewCell", for: indexPath) as! CardsCollectionViewCell
+                cell.setup(with: cards[indexPath.row])
+                return cell
+    }
+}
+
+extension ViewController{
+        func loadDeckId(){
+            let urlStr = "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1"
+            // guard cause url is optional, it could probably not work
+            guard let url = URL(string: urlStr) else { return }
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+
+            // task que ejecuta el requets/session for inizialiting the request
+            // todos los singleton se llaman shared
+            
+            let task = URLSession.shared.dataTask(with: request) {( data, response, error) in
+            guard (error == nil), let data = data else {return}
+                
+                do{
+                    if let deckIdJson = try JSONSerialization.jsonObject(with: data, options: [] as? [String:Any])
+                    {
+                        self.DeckId = deckIdJson["deck_id"] as? String
+                    }
+                    
+                    DispatchQueue.main.sync{
+                        self.loadDeckImage()
+                    }
+                } catch{
+                     print("Error",error)
+                    }
+                     
+            }
+            task.resume()
+                
+    }
+            
+            func loadDeckImage(){
+                let urlStr = "https://deckofcardsapi.com/api/deck/\(self.deck_id ?? "")/draw/?count=1"
+                // guard cause url is optional, it could probably not work
+                guard let url = URL(string: urlStr) else { return }
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+            }
+}
+
+            extension UIImageView{
+                func load(url:URL){
+            
+                    DispatchQueue.global().async{
+                        if let data=try?Data(contents of:url){
+                            if let image=UIImage(data:data){
+                                DispatchQueue.main.asyn:{
+                                    self.image image
+                                }
+                            }
+                        }
+                    }
+            }
+        }

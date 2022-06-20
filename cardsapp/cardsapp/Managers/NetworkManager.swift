@@ -35,7 +35,7 @@ class NetworkManager {
             
             if let error = error {
                 DispatchQueue.main.async {
-                    completion( .failure(error)  )
+                    completion( Result.failure(error)  )
                 }
                 return
             }
@@ -44,9 +44,9 @@ class NetworkManager {
             // , = y
             
             // si puedo rescatar y decodificar, mando los items
-            if let data  = data, let items = try? jsonDecoder.decode(type, from: data) {
+            if let data = data, let items = try? jsonDecoder.decode(type, from: data) {
                 DispatchQueue.main.async {
-                    completion( Result.success(items)  )
+                    completion( Result.success(items) )
                 }
             } else {
                 DispatchQueue.main.async {

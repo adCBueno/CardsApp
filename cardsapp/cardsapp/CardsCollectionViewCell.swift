@@ -10,9 +10,8 @@ import UIKit
 class CardsCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet weak var cardsImageVIew: UIImageView!
-   
-    func setup(with medias: Media){
-        //cardsImageVIew.image = medias.image
-    }
     
+    func setup(with cards: Cards){
+        cardsImageVIew.image = cards.image
+    }
 }
